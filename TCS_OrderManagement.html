@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TCS Private Limited — Order Management</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+:root {
+  --primary:#1a3a6b; --primary-lt:#2356a8; --accent:#e8a020; --accent-lt:#ffd07a;
+  --bg:#f0f4fa; --surface:#fff; --surface2:#e8eef8; --border:#c8d6ed;
+  --text:#1a2340; --text2:#4a5878; --danger:#d03030; --success:#1a8a40;
+  --mono:'JetBrains Mono',monospace; --sans:'Inter',sans-serif;
+  --radius:10px; --shadow:0 2px 16px rgba(26,58,107,.10);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;}
+
+.topbar{background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;box-shadow:0 2px 12px rgba(0,0,0,.18);position:sticky;top:0;z-index:100;}
+.logo-text{font-size:16px;font-weight:700;}
+.logo-text span.tcs{color:#fff;}
+.logo-text span.se{color:var(--accent-lt);font-style:italic;}
+.topbar-status{font-size:11px;opacity:.75;}
+
+.layout{display:flex;min-height:calc(100vh - 56px);}
+.sidebar{width:210px;min-width:210px;background:var(--primary);padding:16px 0;display:flex;flex-direction:column;gap:2px;}
+.nav-item{display:flex;align-items:center;gap:9px;padding:10px 20px;color:rgba(255,255,255,.72);cursor:pointer;font-size:13px;font-weight:500;border-left:3px solid transparent;transition:all .15s;}
+.nav-item:hover{background:rgba(255,255,255,.08);color:#fff;}
+.nav-item.active{background:rgba(232,160,32,.15);color:var(--accent-lt);border-left-color:var(--accent);}
+.nav-icon{font-size:15px;width:18px;text-align:center;}
+.nav-sep{height:1px;background:rgba(255,255,255,.1);margin:6px 14px;}
+.nav-section{font-size:10px;color:rgba(255,255,255,.4);padding:8px 20px 4px;text-transform:uppercase;letter-spacing:1px;}
+
+.main{flex:1;padding:24px;overflow-y:auto;}
+.page{display:none;}
+.page.active{display:block;}
+.page-header{margin-bottom:20px;}
+.page-header h2{font-size:20px;font-weight:700;color:var(--primary);}
+.page-header p{font-size:13px;color:var(--text2);margin-top:3px;}
+
+.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px;}
+.card-title{font-size:14px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--surface2);padding-bottom:10px;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:20px;}
+.stat-card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;border-left:4px solid var(--primary);}
+.stat-val{font-size:26px;font-weight:700;color:var(--primary);}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:3px;font-weight:500;}
+
+.form-row{display:grid;gap:12px;margin-bottom:12px;}
+.form-row.c2{grid-template-columns:1fr 1fr;}
+.form-row.c3{grid-template-columns:1fr 1fr 1fr;}
+.form-row.c1{grid-template-columns:1fr;}
+.fg{display:flex;flex-direction:column;gap:4px;}
+.fg label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;}
+.fg input,.fg select,.fg textarea{padding:8px 11px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--sans);font-size:13px;color:var(--text);background:var(--surface);transition:border-color .15s;}
+.fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--primary-lt);box-shadow:0 0 0 3px rgba(35,86,168,.1);}
+.fg textarea{resize:vertical;font-family:var(--mono);font-size:12px;}
+.fg .note{font-size:10px;color:var(--text2);margin-top:2px;}
+input.err,textarea.err{border-color:var(--danger)!important;background:#fff5f5;}
+.field-err{font-size:11px;color:var(--danger);margin-top:2px;}
+
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.btn{padding:8px 18px;border:none;border-radius:7px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:5px;}
+.btn-primary{background:var(--primary);color:#fff;}.btn-primary:hover{background:var(--primary-lt);}
+.btn-accent{background:var(--accent);color:#fff;}.btn-accent:hover{background:#c88010;}
+.btn-danger{background:var(--danger);color:#fff;}.btn-danger:hover{background:#a02020;}
+.btn-ghost{background:var(--surface2);color:var(--text);}.btn-ghost:hover{background:var(--border);}
+.btn-success{background:var(--success);color:#fff;}
+.btn-sm{padding:4px 10px;font-size:11px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+.tbl-wrap{overflow-x:auto;border-radius:var(--radius);border:1.5px solid var(--border);}
+table{width:100%;border-collapse:collapse;font-size:12.5px;}
+thead{background:var(--primary);color:#fff;}
+thead th{padding:9px 10px;text-align:left;font-weight:600;white-space:nowrap;}
+tbody tr{border-bottom:1px solid var(--surface2);}
+tbody tr:hover{background:#f4f8ff;}
+tbody tr.today-row{background:#fffbe6;}
+tbody td{padding:6px 10px;vertical-align:middle;text-align:left;}
+.sn-cell{color:var(--text2);font-size:11px;}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
+.badge-blue{background:#dce8ff;color:var(--primary);}
+.badge-green{background:#d4f4e4;color:var(--success);}
+.badge-red{background:#ffe0e0;color:var(--danger);}
+.badge-orange{background:#fff0d0;color:#b06000;}
+
+.report-tbl thead{background:var(--primary);}
+.report-tbl .tr-vendor{background:#dce8ff;font-weight:700;}
+.report-tbl .tr-desc{background:var(--surface2);font-weight:600;}
+.report-tbl .tr-total{background:#e8f4e8;font-weight:600;}
+.report-tbl .tr-grand{background:var(--primary);color:#fff;font-weight:700;}
+.tr-grand td{color:#fff!important;}
+.num{text-align:right;font-family:var(--mono);}
+
+.alert{padding:10px 14px;border-radius:7px;font-size:13px;display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.alert-error{background:#ffe0e0;color:var(--danger);border:1.5px solid #f5b0b0;}
+.alert-success{background:#d4f4e4;color:var(--success);border:1.5px solid #90d4b0;}
+.alert-info{background:#dce8ff;color:var(--primary);border:1.5px solid #90b4e8;}
+.alert-warn{background:#fff3cd;color:#856404;border:1.5px solid #ffd970;}
+
+.loader-wrap{display:flex;align-items:center;justify-content:center;padding:40px;gap:10px;color:var(--text2);}
+.spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:300;display:flex;align-items:center;justify-content:center;}
+.modal-bg.hidden{display:none;}
+.modal{background:var(--surface);border-radius:14px;padding:28px;width:500px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.25);}
+.modal-title{font-size:15px;font-weight:700;color:var(--primary);margin-bottom:18px;display:flex;align-items:center;gap:8px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+
+/* ENTRY FORM FIELDS - clean, no extra wrapper */
+.entry-field{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--sans);font-size:13px;color:var(--text);background:var(--surface);transition:border-color .15s;}
+.entry-field:focus{outline:none;border-color:var(--primary-lt);box-shadow:0 0 0 3px rgba(35,86,168,.1);}
+.entry-field.mono{font-family:var(--mono);font-size:12px;}
+.entry-field.err{border-color:var(--danger)!important;background:#fff5f5;}
+
+.welcome-card{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-lt) 100%);border-radius:var(--radius);padding:24px 28px;color:#fff;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+.welcome-card h2{font-size:20px;font-weight:700;}
+.welcome-card p{font-size:13px;opacity:.8;margin-top:4px;}
+.welcome-badge{background:rgba(255,255,255,.15);padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;}
+
+.log-row-add{background:#f0fff4;}
+.log-row-edit{background:#fffbe6;}
+.log-row-del{background:#fff5f5;}
+
+/* Date display trick */
+.date-wrap{position:relative;}
+.date-wrap input[type=date]{width:100%;}
+.date-overlay{position:absolute;inset:0;padding:8px 11px;font-size:13px;color:var(--text);font-weight:600;pointer-events:none;background:var(--surface);border-radius:7px;border:1.5px solid var(--border);display:flex;align-items:center;}
+.date-overlay.hidden{display:none;}
+
+@media(max-width:700px){.sidebar{display:none;}.form-row.c2,.form-row.c3{grid-template-columns:1fr;}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+</head>
+<body>
+
+<div id="appWrap">
+<div class="topbar">
+  <div class="logo-text">
+    <span class="tcs">TCS Private Limited</span>
+    <span class="se"> — Sentiments Express</span>
+  </div>
+  <div style="font-size:12px;font-weight:700;color:var(--accent-lt);letter-spacing:.3px;">✨ Designed &amp; Built with Pride by <strong style="color:#fff;font-size:13px;">Shuaib Saeed</strong></div>
+  <div class="topbar-status" id="apiStatus">⚙️ API Set Karein</div>
+</div>
+
+<div class="layout">
+<nav class="sidebar">
+  <div class="nav-section">Main</div>
+  <div class="nav-item active" onclick="showPage('dashboard')"><span class="nav-icon">🏠</span> Dashboard</div>
+  <div class="nav-item" onclick="showPage('master')"><span class="nav-icon">📋</span> Master Sheet</div>
+  <div class="nav-sep"></div>
+  <div class="nav-section">Reports</div>
+  <div class="nav-item" onclick="showPage('requisition')"><span class="nav-icon">📄</span> Requisition Slip</div>
+  <div class="nav-item" onclick="showPage('productsheet')"><span class="nav-icon">🚚</span> Product Sheet</div>
+  <div class="nav-item" onclick="showPage('summary')"><span class="nav-icon">📊</span> Summary Slip</div>
+  <div class="nav-item" onclick="showPage('vendorslip')"><span class="nav-icon">🏪</span> Vendor Slip</div>
+  <div class="nav-item" onclick="showPage('vendordetails')"><span class="nav-icon">👥</span> Vendor Details</div>
+  <div class="nav-sep"></div>
+  <div class="nav-section">System</div>
+  <div class="nav-item" onclick="showPage('ratefile')"><span class="nav-icon">📦</span> Rate File</div>
+  <div class="nav-item" onclick="showPage('settings')"><span class="nav-icon">⚙️</span> Settings</div>
+</nav>
+
+<main class="main">
+
+<!-- DASHBOARD -->
+<div class="page active" id="page-dashboard">
+  <div class="welcome-card">
+    <div>
+      <h2>TCS Private Limited — <em style="color:var(--accent-lt)">Sentiments Express</em></h2>
+      <p>Order Management System</p>
+      <p style="font-size:11px;opacity:.7;margin-top:6px">✨ Designed &amp; Built with pride by <strong>Shuaib Saeed</strong></p>
+    </div>
+    <div class="welcome-badge" id="welcomeDate">—</div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val" id="statTotal">—</div><div class="stat-lbl">📋 Total Entries</div></div>
+    <div class="stat-card" style="border-left-color:var(--accent)"><div class="stat-val" id="statToday">—</div><div class="stat-lbl">📅 Aaj Ki Entries</div></div>
+    <div class="stat-card" style="border-left-color:var(--success)"><div class="stat-val" id="statVendors">—</div><div class="stat-lbl">👥 Active Vendors</div></div>
+    <div class="stat-card" style="border-left-color:#9b30d0"><div class="stat-val" id="statItems">—</div><div class="stat-lbl">📦 Aaj Ki Items</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🚀 Quick Actions</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="showPage('master')">➕ New Entry</button>
+      <button class="btn btn-accent" onclick="showPage('requisition')">📄 Requisition Slip</button>
+      <button class="btn btn-ghost" onclick="showPage('summary')">📊 Summary Slip</button>
+      <button class="btn btn-ghost" onclick="showPage('vendorslip')">🏪 Vendor Slip</button>
+      <button class="btn btn-ghost" onclick="showPage('vendordetails')">👥 Vendor Details</button>
+    </div>
+  </div>
+</div>
+
+<!-- MASTER SHEET -->
+<div class="page" id="page-master">
+  <div class="page-header">
+    <h2>📋 Master Sheet</h2>
+    <p>Flow: SE GOF → Date → Item Code(s) <strong>[Enter = lookup]</strong> → Qty → Vendor <strong>[Enter = save]</strong></p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">➕ New Entry</div>
+
+    <!-- Row 1: SE GOF + Date -->
+    <div class="form-row c2" style="margin-bottom:14px">
+      <div class="fg">
+        <label>SE GOF # <span style="color:red">*</span></label>
+        <input type="text" id="m_seGof" class="entry-field" placeholder="e.g. 9003240973"
+          oninput="validateSeGof(this)"
+          onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();document.getElementById('m_date_real').focus();}">
+        <span class="field-err" id="err_seGof"></span>
+      </div>
+      <div class="fg">
+        <label>Date</label>
+        <div class="date-wrap">
+          <input type="date" id="m_date_real" class="entry-field"
+            onfocus="document.getElementById('m_date_overlay').classList.add('hidden')"
+            onblur="updateDateOverlay()"
+            onchange="updateDateOverlay()"
+            onkeydown="if(event.key==='Enter'||event.key==='Tab'){event.preventDefault();updateDateOverlay();document.getElementById('m_codes').focus();}">
+          <div class="date-overlay" id="m_date_overlay" onclick="focusDate()">📅 —</div>
+        </div>
+        <span class="note">Aaj ki date auto-set hai</span>
+      </div>
+    </div>
+
+    <!-- Row 2: Item Codes (full width) -->
+    <div class="fg" style="margin-bottom:14px">
+      <label>Item Code(s) <span style="color:red">*</span> &nbsp;<span style="font-size:10px;color:var(--text2);font-weight:400">(Enter = neeche aao • Ctrl+Enter = Lookup & agla field)</span></label>
+      <textarea id="m_codes" class="entry-field mono" rows="3" placeholder="Ek code per line&#10;Ctrl+Enter dabao jab sab codes likh lo"
+        onkeydown="codesKeydown(event)"></textarea>
+    </div>
+
+    <!-- Row 3: Qty + Vendor + Buttons -->
+    <div class="form-row c3">
+      <div class="fg">
+        <label>Qty (per item)</label>
+        <textarea id="m_qtys" class="entry-field mono" rows="3" placeholder="1&#10;1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.ctrlKey){event.preventDefault();document.getElementById('m_vendors').focus();}"></textarea>
+        <span class="note">Har item ki qty alag line mein</span>
+      </div>
+      <div class="fg">
+        <label>Vendor Code <span style="font-size:10px;color:var(--text2)">(auto / editable)</span></label>
+        <textarea id="m_vendors" class="entry-field mono" rows="3" placeholder="Lookup ke baad auto fill hoga"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey&&!event.ctrlKey){event.preventDefault();addMasterEntry();}"></textarea>
+        <span class="note">Manually change kar sakte hain • Enter = Save</span>
+      </div>
+      <div style="display:flex;flex-direction:column;justify-content:flex-end;gap:8px">
+        <button class="btn btn-primary" onclick="lookupCodes(null)">🔍 Lookup</button>
+        <button class="btn btn-accent" id="saveBtn" onclick="addMasterEntry()">✅ Save Entry</button>
+        <button class="btn btn-ghost" onclick="clearMasterForm()">🗑️ Clear</button>
+      </div>
+    </div>
+    <div id="masterMsg" style="margin-top:10px"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">
+      📋 Entries
+      <span id="masterCount" class="badge badge-blue"></span>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="loadMasterData()">🔄 Refresh</button>
+      <input type="text" id="masterSearch" placeholder="🔍 Search SE GOF, Item, Vendor..."
+        style="padding:6px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:12.5px;width:240px"
+        oninput="filterMaster()">
+      <button class="btn btn-ghost btn-sm" onclick="clearSearch()">✕ Clear</button>
+    </div>
+    <div id="masterTableWrap"><div class="loader-wrap"><div class="spinner"></div> Loading...</div></div>
+  </div>
+</div>
+
+<!-- REQUISITION SLIP -->
+<div class="page" id="page-requisition">
+  <div class="page-header"><h2>📄 Requisition Slip</h2></div>
+  <div class="card">
+    <div class="form-row c3">
+      <div class="fg"><label>Vendor (blank = all)</label><select id="req_vendor"><option value="">— Sab Vendors —</option></select></div>
+      <div class="fg"><label>Date From</label><input type="date" id="req_from"></div>
+      <div class="fg"><label>Date To</label><input type="date" id="req_to"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generateRequisition()">📄 Generate</button>
+      <button class="btn btn-ghost" onclick="printReport('reqReport','Requisition')">🖨️ Print / PDF</button>
+    </div>
+    <div id="reqMsg"></div>
+  </div>
+  <div id="reqReport"></div>
+</div>
+
+<!-- PRODUCT SHEET (per-courier pick slip) -->
+<div class="page" id="page-productsheet">
+  <div class="page-header"><h2>🚚 Product Sheet</h2><p>Courier-wise item assignment slip — ek courier ke liye</p></div>
+  <div class="card">
+    <!-- Row 1: Date selection -->
+    <div class="form-row c2" style="margin-bottom:12px">
+      <div class="fg"><label>Date From</label><input type="date" id="prod_from"></div>
+      <div class="fg"><label>Date To</label><input type="date" id="prod_to"></div>
+    </div>
+    <!-- Row 2: Courier Code + Courier Name (editable fields) -->
+    <div class="form-row c2" style="margin-bottom:12px">
+      <div class="fg">
+        <label>Courier Code <span style="color:red">*</span></label>
+        <input type="text" id="prod_courier_code" class="entry-field" placeholder="e.g. TCS-KHI"
+          oninput="onCourierCodeInput(this)">
+        <span class="note">Type karo — auto-fill ya manually likh sakte hain</span>
+      </div>
+      <div class="fg">
+        <label>Courier Name <span style="color:red">*</span></label>
+        <input type="text" id="prod_courier_name" class="entry-field" placeholder="e.g. TCS Karachi">
+      </div>
+    </div>
+    <!-- Hidden vendor select for API -->
+    <select id="prod_vendor" style="display:none"><option value="">— Select —</option></select>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generateProductSheet()">🚚 Generate</button>
+      <button class="btn btn-accent" onclick="printProductSheetDirect()">🖨️ Generate PDF</button>
+      <button class="btn btn-ghost" onclick="refreshProductSheet()">🔄 Refresh</button>
+    </div>
+    <div id="prodMsg"></div>
+  </div>
+  <div id="prodReport"></div>
+</div>
+
+<!-- SUMMARY SLIP -->
+<div class="page" id="page-summary">
+  <div class="page-header"><h2>📊 Summary Slip</h2></div>
+  <div class="card">
+    <div class="form-row c3">
+      <div class="fg"><label>Vendor <span style="color:red">*</span></label><select id="sum_vendor"><option value="">— Select —</option></select></div>
+      <div class="fg"><label>Date From</label><input type="date" id="sum_from"></div>
+      <div class="fg"><label>Date To</label><input type="date" id="sum_to"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generateSummary()">📊 Generate</button>
+      <button class="btn btn-ghost" onclick="printReport('sumReport','Summary')">🖨️ Print / PDF</button>
+      <button class="btn btn-success" onclick="exportSummaryExcel()">📥 Excel</button>
+    </div>
+    <div id="sumMsg"></div>
+  </div>
+  <div id="sumReport"></div>
+</div>
+
+<!-- VENDOR SLIP -->
+<div class="page" id="page-vendorslip">
+  <div class="page-header"><h2>🏪 Vendor Slip</h2></div>
+  <div class="card">
+    <div class="form-row c3">
+      <div class="fg"><label>Vendor (blank = all)</label><select id="vs_vendor"><option value="">— Sab —</option></select></div>
+      <div class="fg"><label>Date From</label><input type="date" id="vs_from"></div>
+      <div class="fg"><label>Date To</label><input type="date" id="vs_to"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generateVendorSlip()">🏪 Generate</button>
+      <button class="btn btn-ghost" onclick="printReport('vsReport','VendorSlip')">🖨️ Print / PDF</button>
+    </div>
+    <div id="vsMsg"></div>
+  </div>
+  <div id="vsReport"></div>
+</div>
+
+<!-- VENDOR DETAILS -->
+<div class="page" id="page-vendordetails">
+  <div class="page-header"><h2>👥 Vendor Details</h2></div>
+  <div class="card">
+    <div class="form-row c2">
+      <div class="fg"><label>Date From</label><input type="date" id="vd_from"></div>
+      <div class="fg"><label>Date To</label><input type="date" id="vd_to"></div>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="generateVendorDetails()">👥 Generate</button>
+      <button class="btn btn-ghost" onclick="printReport('vdReport','VendorDetails')">🖨️ Print / PDF</button>
+      <button class="btn btn-success" onclick="exportVendorDetailsExcel()">📥 Excel</button>
+    </div>
+    <div id="vdMsg"></div>
+  </div>
+  <div id="vdReport"></div>
+</div>
+
+
+<!-- RATE FILE -->
+<div class="page" id="page-ratefile">
+  <div class="page-header"><h2>📦 Rate File (Products)</h2><p>Google Sheet Rate File ka data</p></div>
+  <div class="card">
+    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm" onclick="loadRateFile()">🔄 Refresh</button>
+      <input type="text" id="rateSearch" placeholder="🔍 Search item code, desc, vendor..."
+        style="padding:6px 11px;border:1.5px solid var(--border);border-radius:7px;font-size:12.5px;width:260px"
+        oninput="filterRate()">
+      <button class="btn btn-ghost btn-sm" onclick="clearRateSearch()">✕ Clear</button>
+      <span id="rateCount" class="badge badge-blue"></span>
+    </div>
+    <div id="rateTableWrap"><div class="loader-wrap"><div class="spinner"></div> Loading...</div></div>
+  </div>
+</div>
+
+
+<!-- SETTINGS -->
+<div class="page" id="page-settings">
+  <div class="page-header"><h2>⚙️ Settings</h2></div>
+  <div class="card">
+    <div class="card-title">🔗 API URL</div>
+    <div class="fg">
+      <label>Google Apps Script Web App URL</label>
+      <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/XXXXX/exec" style="font-family:var(--mono);font-size:12px">
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveApiUrl()">💾 Save</button>
+      <button class="btn btn-ghost" onclick="testApi()">🔌 Test</button>
+    </div>
+    <div id="settingsMsg"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📖 Setup Guide</div>
+    <ol style="padding-left:20px;line-height:2.2;font-size:13px;color:var(--text2)">
+      <li>Google Sheet kholo → Extensions → Apps Script</li>
+      <li>Code.gs paste karo — SPREADSHEET_ID update karo</li>
+      <li>Deploy → New Deployment → Web App → Anyone</li>
+      <li>URL copy karo → yahan paste karo → Save karo</li>
+      <li>Doosre PC ke liye: same URL share karo — Sheet ka access Google account se dena hoga</li>
+    </ol>
+  </div>
+</div>
+
+</main>
+</div>
+</div>
+
+<!-- EDIT MODAL — pencil click pe khulta hai, close pe auto save -->
+<div class="modal-bg hidden" id="editModal">
+  <div class="modal">
+    <div class="modal-title">✏️ Entry Edit Karein</div>
+    <input type="hidden" id="edit_rowIndex">
+    <div class="form-row c1">
+      <div class="fg">
+        <label>SE GOF #</label>
+        <input type="text" id="edit_seGof" class="entry-field" oninput="validateEditSeGof(this)">
+        <span class="field-err" id="err_edit_seGof"></span>
+      </div>
+      <div class="fg">
+        <label>Date</label>
+        <input type="date" id="edit_date" class="entry-field">
+      </div>
+      <div class="fg">
+        <label>Item Codes <span style="font-size:10px;color:var(--text2)">(har code alag line mein)</span></label>
+        <textarea id="edit_codes" class="entry-field mono" rows="4"></textarea>
+      </div>
+      <div class="fg">
+        <label>Qty <span style="font-size:10px;color:var(--text2)">(har item ki qty alag line mein)</span></label>
+        <textarea id="edit_qtys" class="entry-field mono" rows="4"></textarea>
+      </div>
+      <div class="fg">
+        <label>Vendor Codes <span style="font-size:10px;color:var(--text2)">(editable — manually change kar sakte hain)</span></label>
+        <textarea id="edit_vendors" class="entry-field mono" rows="4"></textarea>
+      </div>
+    </div>
+    <div id="editMsg" style="margin-top:10px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModalNoSave()">✕ Cancel</button>
+      <button class="btn btn-primary" id="editSaveBtn" onclick="saveEditAndClose()">💾 Save &amp; Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var API_URL = localStorage.getItem('tcs_api_url') || 'https://script.google.com/macros/s/AKfycbz-WHAqPf5223x0QJ5nI0-Kyob05kJid0dx7hZ2VE4762FM1cD1Dfuq-vAwbAGwD9dHcw/exec';
+var masterData = [];
+var vendorList = [];
+var _lastSummaryData = null;
+var _lastVdData = null;
+var _lastVdDates = {};
+var currentUser = { code: 'SYS', name: 'TCS User' };
+var _lastLookupDescs = '';   // lookup se mili item descs — save ke waqt use hogi
+var _lastLookupBoxDescs = ''; // lookup se mili box descs
+
+// ── NAVIGATION ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('active'); });
+  document.querySelectorAll('.nav-item').forEach(function(n){ n.classList.remove('active'); });
+  var pg = document.getElementById('page-' + name);
+  if (pg) pg.classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(function(item) {
+    if ((item.getAttribute('onclick')||'').includes("'" + name + "'")) item.classList.add('active');
+  });
+}
+
+// ── API ──
+function apiCall(action, extra, cb) {
+  if (!API_URL) { alert('Settings mein API URL set karein!'); return; }
+  var body = Object.assign({ action: action, userName: currentUser.name + ' (' + currentUser.code + ')' }, extra || {});
+  fetch(API_URL, { method:'POST', body:JSON.stringify(body), headers:{'Content-Type':'text/plain'} })
+    .then(function(r){ return r.json(); })
+    .then(function(d){ cb(null, d); })
+    .catch(function(e){ cb(e, null); });
+}
+
+// ── SETTINGS ──
+function saveApiUrl() {
+  var url = document.getElementById('apiUrlInput').value.trim();
+  if (!url) { showMsg('settingsMsg','error','URL khali nahi ho sakti!'); return; }
+  localStorage.setItem('tcs_api_url', url); API_URL = url;
+  document.getElementById('apiStatus').textContent = '✅ Connected';
+  showMsg('settingsMsg','success','✅ URL save ho gayi!');
+  initApp();
+}
+function testApi() {
+  var url = document.getElementById('apiUrlInput').value.trim();
+  if (!url) { showMsg('settingsMsg','error','Pehle URL likho!'); return; }
+  showMsg('settingsMsg','info','🔄 Testing...');
+  fetch(url).then(function(r){ return r.text(); })
+    .then(function(){ showMsg('settingsMsg','success','✅ Connected!'); })
+    .catch(function(e){ showMsg('settingsMsg','error','❌ ' + e.message); });
+}
+
+// ── DATE OVERLAY (Req #3 blur) ──
+function focusDate() {
+  document.getElementById('m_date_overlay').classList.add('hidden');
+  document.getElementById('m_date_real').focus();
+}
+function updateDateOverlay() {
+  var val = document.getElementById('m_date_real').value;
+  var overlay = document.getElementById('m_date_overlay');
+  if (val) {
+    var d = new Date(val + 'T00:00:00');
+    overlay.textContent = '📅 ' + d.toLocaleDateString('en-PK', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+    overlay.classList.remove('hidden');
+  } else {
+    overlay.classList.add('hidden');
+  }
+}
+
+// ── SE GOF VALIDATION ──
+function validateSeGof(el) {
+  var v = el.value.trim();
+  var err = document.getElementById('err_seGof');
+  if (!v) { err.textContent = ''; el.classList.remove('err'); return true; }
+  var ok = /^900\d{7}$/.test(v) || /^9100\d{7}$/.test(v) || /^912000\d{5}$/.test(v);
+  if (!ok) { err.textContent = '⚠️ Invalid! 900+7d(10) | 9100+7d(11) | 912000+5d(11)'; el.classList.add('err'); return false; }
+  err.textContent = ''; el.classList.remove('err'); return true;
+}
+function validateEditSeGof(el) {
+  var v = el.value.trim();
+  var err = document.getElementById('err_edit_seGof');
+  if (!v) { err.textContent = ''; el.classList.remove('err'); return true; }
+  var ok = /^900\d{7}$/.test(v) || /^9100\d{7}$/.test(v) || /^912000\d{5}$/.test(v);
+  if (!ok) { err.textContent = '⚠️ Invalid format!'; el.classList.add('err'); return false; }
+  err.textContent = ''; el.classList.remove('err'); return true;
+}
+
+// ── ITEM CODE PREFIX VALIDATION (RT, WNC, INC, LMPK only) ──
+function validateItemCodes(codes) {
+  var validPrefixes = [
+    'RT', 'WNC', 'INC', 'LMPK', 'HS',
+    'A1CF', 'ABTT', 'GTZ25', 'AMMT', 'APLEX', 'APLMJ', 'AT65', 'AVAN2101', 'AVAN2102', 'AVIMT',
+    'BASF1901', 'BAT241', 'BAT242', 'BHF24', 'BP47', 'CB', 'TGBF1', 'TGBF2', 'CD2', 'CFSB9',
+    'CFT26', 'CFTZ6', 'DIB6', 'DMCF20', 'DMCF26', 'DPCF7', 'DWLNCE', 'DYCF',
+    'EFL25', 'EFL26', 'EFL27', 'EFU1LB', 'EFU2LB', 'EPCBD23', 'EPCJJ23', 'EPEBD23',
+    'EPNJR23', 'EPSBD23', 'EPWA', 'EPWA25', 'EPWA26', 'EPEW', 'EPOL26', 'EPCOL26', 'EPCJJ26',
+    'FFEEP01', 'FFEEP02', 'FOL1801', 'FSE',
+    'GETZ2020', 'GRYCF', 'HDPCF', 'HDSCB', 'IBE005', 'IBTL25',
+    'IMANGO1', 'IMANGO2', 'IMANGO3',
+    'IVD017', 'IVD018', 'IVD021', 'IVD022', 'WVD017', 'WVD018', 'WVD021', 'WVD022',
+    'JAZZ1801', 'JAZZ1802', 'JAZZ1803', 'JAZZ251', 'JAZZ252',
+    'JBS6', 'JGCF3', 'JB18', 'JB19', 'JB31', 'JNY261', 'JNY262',
+    'MANGO01', 'MANGO02', 'MANGO03', 'MANGO04', 'MANGO07',
+    'WMANGO1', 'WMANGO2', 'WMANGO3',
+    'DMBF28', 'MDEEP', 'MEDEEP', 'MEEPD01', 'MGE25', 'MGLCF', 'MPL1901',
+    'MSK54', 'MSKCM', 'MT360', 'MTMBL', 'MFFL01', 'MTCCF',
+    'NCF1', 'NMM1', 'NMM2', 'NPHB', 'NKCF',
+    'OT231', 'OT232', 'OT233', 'OT234',
+    'P26', 'PAY2', 'PGTM', 'PHI1801', 'PI231', 'PI232', 'PICL1801',
+    'PSDF01', 'PSO55', 'PTC232', 'PIOCM', 'PTEAE262',
+    'RCCF9', 'RCM52', 'RCMM7', 'RCRV42', 'RD11', 'RD12', 'RD14', 'RLCF02', 'RO22',
+    'SCOT22', 'SHTLCF', 'SICPA202', 'SPFMP', 'STILE01', 'STL2', 'STCM8',
+    'SBNY25', 'SCBBF', 'SPRE261', 'SPRE262',
+    'TEEP01', 'TFM10', 'TFM5', 'TPAK2', 'TPAL', 'TRIBF', 'TTECF1', 'TPCF5',
+    'TBEEP01', 'TBEEP03', 'TBEEP04', 'THED', 'TJCF1', 'TJCF2', 'TSCF',
+    'VIVA22', 'WILSON1801',
+    'CCL2101', 'MASTER1801', 'METRO01', 'MP201', 'ONT1801', 'ATBBF', 'ATB', 'AWM',
+    'ABBOTT1801', 'ADDO01', 'ADDO02', 'ISLCF', 'AOCF', 'ABNY26',
+    'DFM', 'DFF', 'DAW3', 'DEEP01', 'DT261', 'DT262', 'DWP7',
+    'ENICF', 'BPCM5', 'JCF1LB', 'FLCM', 'CTG49', 'BBE261',
+    'BHN26', 'WYNM63', 'LMPK2', 'LMPK5', 'LMPK10',
+    'ATCO09', 'SPCF6', 'PIOCM'
+  ];
+  var lines = codes.split('\n').map(function(c){ return c.trim(); }).filter(Boolean);
+  var invalid = [];
+  lines.forEach(function(code) {
+    var upper = code.toUpperCase();
+    var ok = validPrefixes.some(function(pfx){ return upper.startsWith(pfx); });
+    if (!ok) invalid.push(code);
+  });
+  return invalid;
+}
+
+// ── DUPLICATE CHECK ──
+function checkDuplicate(seGof, codes) {
+  return masterData.some(function(row) {
+    return row.seGof.trim() === seGof.trim();
+  });
+}
+
+// ── ITEM CODES KEYDOWN (Req #1: Enter=newline, Ctrl+Enter=lookup) ──
+function codesKeydown(e) {
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    lookupCodes(function(){ addMasterEntry(); });
+  }
+  // plain Enter = default textarea behavior (newline) — do nothing
+}
+
+// ── INIT ──
+function initApp() {
+  var today = new Date().toISOString().split('T')[0];
+  ['m_date_real','req_from','req_to','sum_from','sum_to','vs_from','vs_to','vd_from','vd_to','prod_from','prod_to'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.value = today;
+  });
+  updateDateOverlay();
+  loadDashboard();
+  loadVendorDropdowns();
+  loadMasterData();
+  loadRateFile();
+}
+
+// ── DASHBOARD ──
+function loadDashboard() {
+  apiCall('getMasterData', {}, function(err, res) {
+    if (err || !res.success) return;
+    var todayStr = new Date().toDateString();
+    var todayRows = res.data.filter(function(r){ return new Date(r.date).toDateString() === todayStr; });
+    var todayItems = 0;
+    todayRows.forEach(function(r){ todayItems += (r.itemCodes||'').split('\n').filter(Boolean).length; });
+    document.getElementById('statTotal').textContent = res.data.length;
+    document.getElementById('statToday').textContent = todayRows.length;
+    document.getElementById('statItems').textContent = todayItems;
+  });
+  apiCall('getVendorList', {}, function(err, res) {
+    if (err || !res.success) return;
+    document.getElementById('statVendors').textContent = res.data.length;
+  });
+}
+
+// ── VENDOR DROPDOWNS ──
+function loadVendorDropdowns() {
+  apiCall('getVendorList', {}, function(err, res) {
+    if (err || !res.success) return;
+    vendorList = res.data;
+    ['req_vendor','sum_vendor','vs_vendor'].forEach(function(id) {
+      var sel = document.getElementById(id);
+      var first = sel.options[0];
+      sel.innerHTML = ''; sel.appendChild(first);
+      res.data.forEach(function(v) {
+        var o = document.createElement('option');
+        o.value = v.code; o.textContent = v.code + ' — ' + v.name;
+        sel.appendChild(o);
+      });
+    });
+    // prod_vendor hidden select — populate for code lookup
+    var prodSel = document.getElementById('prod_vendor');
+    if (prodSel) {
+      prodSel.innerHTML = '<option value=""></option>';
+      res.data.forEach(function(v) {
+        var o = document.createElement('option');
+        o.value = v.code; o.textContent = v.code;
+        prodSel.appendChild(o);
+      });
+    }
+  });
+}
+
+// ── MASTER — LOAD & RENDER ──
+function loadMasterData() {
+  document.getElementById('masterTableWrap').innerHTML = '<div class="loader-wrap"><div class="spinner"></div> Loading...</div>';
+  document.getElementById('masterSearch').value = '';
+  apiCall('getMasterData', {}, function(err, res) {
+    if (err || !res.success) {
+      document.getElementById('masterTableWrap').innerHTML = '<div class="alert alert-error">❌ ' + (err ? err.message : res.error) + '</div>';
+      return;
+    }
+    masterData = res.data;
+    document.getElementById('masterCount').textContent = res.data.length + ' rows';
+    renderMasterTable(res.data);
+  });
+}
+
+function renderMasterTable(data) {
+  if (!data.length) {
+    document.getElementById('masterTableWrap').innerHTML = '<div class="alert alert-info">Koi data nahi.</div>';
+    return;
+  }
+  var sorted = data.slice().sort(function(a,b) {
+    var da = new Date(a.date||0), db = new Date(b.date||0);
+    if (db - da !== 0) return db - da;
+    return b.rowIndex - a.rowIndex;
+  });
+  var todayStr = new Date().toDateString();
+  var html = '<div class="tbl-wrap"><table><thead><tr>'
+    + '<th>#</th><th>SE GOF</th><th>Date</th><th>Item Code(s)</th><th>Qty</th><th>Vendor</th><th>Actions</th>'
+    + '</tr></thead><tbody>';
+  sorted.forEach(function(r, i) {
+    var isToday = new Date(r.date).toDateString() === todayStr;
+    var codes = (r.itemCodes||'').split('\n').filter(Boolean);
+    var qtys  = (r.qtys||'').split('\n').filter(Boolean);
+    var vends = (r.vendorCodes||'').split('\n').filter(Boolean);
+    // Multi-line display
+    var codesHtml = codes.map(function(c){ return '<div style="font-family:var(--mono);font-size:12px">' + esc(c) + '</div>'; }).join('');
+    var qtysHtml  = qtys.map(function(q){ return '<div style="text-align:center;font-family:var(--mono)">' + esc(q) + '</div>'; }).join('');
+    var vendsHtml = vends.map(function(v){ return '<div style="font-family:var(--mono);font-weight:600;color:var(--primary)">' + esc(v) + '</div>'; }).join('');
+
+    html += '<tr' + (isToday ? ' class="today-row"' : '') + '>'
+      + '<td class="sn-cell">' + (i+1) + '</td>'
+      + '<td><strong style="font-family:var(--mono)">' + esc(r.seGof) + '</strong></td>'
+      + '<td><span class="badge badge-blue">' + esc(r.date) + '</span></td>'
+      + '<td>' + (codesHtml || '—') + '</td>'
+      + '<td>' + (qtysHtml || '—') + '</td>'
+      + '<td>' + (vendsHtml || '—') + '</td>'
+      + '<td>'
+      + '<div style="display:flex;gap:4px">'
+      + '<button class="btn btn-ghost btn-sm" onclick="openEditModal(' + r.rowIndex + ')" title="Edit">✏️</button>'
+      + '<button class="btn btn-danger btn-sm" onclick="deleteRow(' + r.rowIndex + ')" title="Delete">🗑️</button>'
+      + '</div></td>'
+      + '</tr>';
+  });
+  html += '</tbody></table></div>';
+  document.getElementById('masterTableWrap').innerHTML = html;
+}
+
+function filterMaster() {
+  var q = document.getElementById('masterSearch').value.toLowerCase();
+  if (!q) { renderMasterTable(masterData); return; }
+  renderMasterTable(masterData.filter(function(r) {
+    return (r.seGof + r.itemCodes + r.vendorCodes + r.date).toLowerCase().includes(q);
+  }));
+}
+function clearSearch() { document.getElementById('masterSearch').value = ''; renderMasterTable(masterData); }
+
+// ── LOOKUP — NOT FOUND pe warn karo aur rukk jao ──
+function lookupCodes(cb) {
+  var codes = document.getElementById('m_codes').value.trim();
+  var date  = document.getElementById('m_date_real').value;
+  if (!codes) { if (cb) cb(); return; }
+
+  // 1. Prefix validation — RT, WNC, INC, LMPK only
+  var invalidCodes = validateItemCodes(codes);
+  if (invalidCodes.length > 0) {
+    showMsg('masterMsg','error','⚠️ Invalid item code(s): <strong>' + esc(invalidCodes.join(', ')) + '</strong><br>Rate File mein registered codes hi valid hain. Naya code add karna ho to admin se rabta karein.');
+    return;
+  }
+
+  // 2. Duplicate check
+  var seGof = document.getElementById('m_seGof').value.trim();
+  if (seGof && checkDuplicate(seGof, codes)) {
+    showMsg('masterMsg','error','⚠️ Duplicate entry! Yeh SE GOF + Item Code pehle se maujood hai. Save nahi hoga.');
+    return;
+  }
+
+  showMsg('masterMsg','info','🔍 Lookup ho raha hai...');
+  apiCall('getItemByCode', { code: codes, date: date }, function(err, res) {
+    if (err || !res.success) { showMsg('masterMsg','error','❌ ' + (err ? err.message : res.error)); return; }
+
+    // NOT FOUND check — agar koi bhi item nahi mila to rukk jao
+    var notFound = res.items.filter(function(it){ return !it.vendor || it.desc === 'NOT FOUND'; });
+    if (notFound.length > 0) {
+      var missingCodes = notFound.map(function(it){ return it.code; }).join(', ');
+      showMsg('masterMsg','error',
+        '⚠️ Yeh item(s) Rate File mein nahi mile: <strong>' + esc(missingCodes) + '</strong><br>'
+        + 'Pehle Rate File mein add karein, phir dobara lookup karein.');
+      // Jo mila uska vendor dikhao, jo nahi mila wahan blank ya NOT FOUND
+      document.getElementById('m_vendors').value = res.items.map(function(it){
+        return (it.vendor && it.desc !== 'NOT FOUND') ? it.vendor : '⚠️ NOT FOUND';
+      }).join('\n');
+      var qtysEl = document.getElementById('m_qtys');
+      if (!qtysEl.value.trim()) qtysEl.value = res.items.map(function(){ return '1'; }).join('\n');
+      return; // rukk jao — auto save nahi hoga
+    }
+
+    // Sab mile — fill karo
+    document.getElementById('m_vendors').value = res.items.map(function(it){ return it.vendor; }).join('\n');
+    // DESC aur BOX_DESC store karo — save ke waqt sheet mein jayenge
+    _lastLookupDescs    = res.items.map(function(it){ return it.desc    || ''; }).join('\n');
+    _lastLookupBoxDescs = res.items.map(function(it){ return it.boxDesc || ''; }).join('\n');
+    var qtysEl = document.getElementById('m_qtys');
+    if (!qtysEl.value.trim()) qtysEl.value = res.items.map(function(){ return '1'; }).join('\n');
+    showMsg('masterMsg','success','✅ ' + res.items.length + ' item(s) found — Saving...');
+
+    // Auto save seedha — alag Enter nahi dabana
+    if (cb) cb();
+  });
+}
+
+// ── ADD ENTRY ──
+function addMasterEntry() {
+  var seGof = document.getElementById('m_seGof').value.trim();
+  var codes = document.getElementById('m_codes').value.trim();
+  if (!seGof || !codes) { showMsg('masterMsg','error','SE GOF # aur Item Codes zaroori hain!'); return; }
+  if (!validateSeGof(document.getElementById('m_seGof'))) return;
+
+  // NOT FOUND vendor check — save se pehle rok do
+  var vendorVal = document.getElementById('m_vendors').value;
+  if (vendorVal.indexOf('⚠️ NOT FOUND') !== -1) {
+    showMsg('masterMsg','error','⚠️ Kuch items ka vendor nahi mila — pehle theek karo phir save karo!');
+    return;
+  }
+
+  var saveBtn = document.getElementById('saveBtn');
+  saveBtn.disabled = true; saveBtn.textContent = '⏳ Saving...';
+  var data = {
+    seGof: seGof,
+    date: document.getElementById('m_date_real').value,
+    itemCodes: codes,
+    itemDescs: _lastLookupDescs,
+    boxDescs:  _lastLookupBoxDescs,
+    qtys: document.getElementById('m_qtys').value.trim() || '1',
+    vendorCodes: document.getElementById('m_vendors').value.trim()
+  };
+  apiCall('addMasterRow', { data: data }, function(err, res) {
+    saveBtn.disabled = false; saveBtn.textContent = '✅ Save Entry';
+    if (err || !res.success) { showMsg('masterMsg','error','❌ ' + (err ? err.message : res.error)); return; }
+    showMsg('masterMsg','success','✅ Entry save ho gayi!');
+    clearMasterForm();
+    loadMasterData();
+    loadDashboard();
+    document.getElementById('m_seGof').focus();
+  });
+}
+
+function clearMasterForm() {
+  ['m_seGof','m_codes','m_qtys','m_vendors'].forEach(function(id){ document.getElementById(id).value = ''; });
+  document.getElementById('masterMsg').innerHTML = '';
+  document.getElementById('err_seGof').textContent = '';
+  _lastLookupDescs = '';
+  _lastLookupBoxDescs = '';
+}
+
+// ── DELETE ──
+function deleteRow(rowIndex) {
+  if (!confirm('⚠️ Yeh entry delete ho jaegi — sure hain?')) return;
+  apiCall('deleteMasterRow', { rowIndex: rowIndex }, function(err, res) {
+    if (err || !res.success) { alert('❌ ' + (err ? err.message : res.error)); return; }
+    loadMasterData(); loadDashboard();
+  });
+}
+
+// ── EDIT MODAL (Req #3 pencil + Req #4 auto-save on close) ──
+function openEditModal(rowIndex) {
+  var row = masterData.find(function(r){ return r.rowIndex === rowIndex; });
+  if (!row) return;
+  document.getElementById('edit_rowIndex').value = rowIndex;
+  document.getElementById('edit_seGof').value   = row.seGof || '';
+  document.getElementById('edit_date').value     = isoDate(row.date) || '';
+  document.getElementById('edit_codes').value    = row.itemCodes || '';
+  document.getElementById('edit_qtys').value     = row.qtys || '';
+  document.getElementById('edit_vendors').value  = row.vendorCodes || '';
+  document.getElementById('editMsg').innerHTML   = '';
+  document.getElementById('editSaveBtn').disabled = false;
+  document.getElementById('editSaveBtn').textContent = '💾 Save & Close';
+  document.getElementById('editModal').classList.remove('hidden');
+}
+
+function saveEditAndClose() {
+  var rowIndex = parseInt(document.getElementById('edit_rowIndex').value);
+  if (!validateEditSeGof(document.getElementById('edit_seGof'))) return;
+  var data = {
+    seGof:       document.getElementById('edit_seGof').value.trim(),
+    date:        document.getElementById('edit_date').value,
+    itemCodes:   document.getElementById('edit_codes').value.trim(),
+    itemDescs:   '', boxDescs: '',
+    qtys:        document.getElementById('edit_qtys').value.trim(),
+    vendorCodes: document.getElementById('edit_vendors').value.trim()
+  };
+  var btn = document.getElementById('editSaveBtn');
+  btn.disabled = true; btn.textContent = '⏳ Saving...';
+  apiCall('updateMasterRow', { rowIndex: rowIndex, data: data }, function(err, res) {
+    btn.disabled = false; btn.textContent = '💾 Save & Close';
+    if (err || !res.success) { showMsg('editMsg','error','❌ ' + (err ? err.message : res.error)); return; }
+    document.getElementById('editModal').classList.add('hidden');
+    loadMasterData(); loadDashboard();
+  });
+}
+
+function closeModalNoSave() {
+  document.getElementById('editModal').classList.add('hidden');
+}
+
+// ── REPORT HEADER ──
+function reportHeader(title, sub) {
+  return '<div style="text-align:center;margin-bottom:18px;padding-bottom:14px;border-bottom:2px solid #1a3a6b">'
+    + '<h2 style="color:#1a3a6b;font-size:18px">TCS Private Limited &nbsp;—&nbsp; <em style="color:#e8a020">Sentiments Express</em></h2>'
+    + '<h3 style="font-size:15px;color:#1a2340;margin-top:4px">' + title + '</h3>'
+    + (sub ? '<p style="font-size:12px;color:#4a5878;margin-top:4px">' + sub + '</p>' : '')
+    + '</div>';
+}
+
+// ── REQUISITION ──
+function generateRequisition() {
+  var vendor = document.getElementById('req_vendor').value;
+  var from = document.getElementById('req_from').value;
+  var to   = document.getElementById('req_to').value;
+  showMsg('reqMsg','info','🔄 Generating...');
+  apiCall('generateRequisition', { vendorCode:vendor, dateFrom:from, dateTo:to }, function(err, res) {
+    if (err || !res.success) { showMsg('reqMsg','error','❌ ' + (err?err.message:res.error)); document.getElementById('reqReport').innerHTML=''; return; }
+    showMsg('reqMsg','success','✅ Ready!');
+    var vObj = vendor ? (vendorList.find(function(v){ return v.code===vendor; })||{}) : {};
+    var vName = vendor ? (vObj.name||'') : 'All Vendors';
+    var html = '<div class="card" id="reqReport" style="padding:20px">';
+    html += reportHeader('Requisition Slip','Date: '+from+' to '+to+(vendor?' &nbsp;|&nbsp; Vendor: '+vendor+' — '+esc(vName):''));
+    html += '<div class="tbl-wrap"><table class="report-tbl"><thead><tr><th>Vendor</th><th>Item Desc</th><th>Item Code</th><th>SE GOF</th><th>Box Desc</th><th class="num">Qty</th></tr></thead><tbody>';
+    var grand = 0;
+    res.sections.forEach(function(sec) {
+      html += '<tr class="tr-vendor"><td colspan="5"><strong>🏪 '+esc(sec.vendor)+'</strong></td><td class="num"><strong>'+sec.totalQty+'</strong></td></tr>';
+      sec.groups.forEach(function(g) {
+        html += '<tr class="tr-desc"><td></td><td colspan="4"><strong>'+esc(g.desc)+'</strong></td><td></td></tr>';
+        g.rows.forEach(function(r) {
+          html += '<tr><td></td><td></td><td style="font-family:var(--mono)">'+esc(r.itemCode)+'</td><td style="font-family:var(--mono)">'+esc(r.seGof)+'</td><td>'+esc(r.boxDesc)+'</td><td class="num">'+r.qty+'</td></tr>';
+        });
+        html += '<tr class="tr-total"><td colspan="4"></td><td class="num"><strong>Total:</strong></td><td class="num"><strong>'+g.totalQty+'</strong></td></tr>';
+      });
+      html += '<tr class="tr-total"><td colspan="4"></td><td class="num"><strong>Total '+esc(sec.vendor)+':</strong></td><td class="num"><strong>'+sec.totalQty+'</strong></td></tr>';
+      html += '<tr><td colspan="6" style="padding:3px"></td></tr>';
+      grand += sec.totalQty;
+    });
+    html += '<tr class="tr-grand"><td colspan="5"><strong>GRAND TOTAL</strong></td><td class="num"><strong>'+grand+'</strong></td></tr>';
+    html += '</tbody></table></div></div>';
+    document.getElementById('reqReport').outerHTML = html;
+  });
+}
+
+// ── SUMMARY ──
+function generateSummary() {
+  var vendor = document.getElementById('sum_vendor').value;
+  var from = document.getElementById('sum_from').value;
+  var to   = document.getElementById('sum_to').value;
+  if (!vendor) { showMsg('sumMsg','error','Vendor select karein!'); return; }
+  showMsg('sumMsg','info','🔄 Generating...');
+  apiCall('generateSummary', { vendorCode:vendor, dateFrom:from, dateTo:to }, function(err, res) {
+    if (err || !res.success) { showMsg('sumMsg','error','❌ '+(err?err.message:res.error)); return; }
+    _lastSummaryData = { res:res, from:from, to:to, vendor:vendor };
+    showMsg('sumMsg','success','✅ Ready!');
+    var html = '<div class="card" id="sumReport" style="padding:20px">';
+    html += reportHeader('Summary Slip','Date: '+from+' to '+to+' &nbsp;|&nbsp; Vendor: '+vendor+' — '+esc(res.vendorName));
+    html += '<div class="tbl-wrap"><table class="report-tbl"><thead><tr><th>Item Desc</th><th class="num">Qty</th><th class="num">Amount</th><th class="num">GST</th><th class="num">Total</th></tr></thead><tbody>';
+    res.rows.forEach(function(r) {
+      html += '<tr><td>'+esc(r.desc)+'</td><td class="num">'+r.qty+'</td><td class="num">'+fmt(r.amount)+'</td><td class="num">'+fmt(r.gst)+'</td><td class="num">'+fmt(r.total)+'</td></tr>';
+    });
+    html += '<tr class="tr-grand"><td><strong>TOTAL</strong></td><td class="num"><strong>'+res.totalQty+'</strong></td><td></td><td></td><td class="num"><strong>'+fmt(res.grandTotal)+'</strong></td></tr>';
+    html += '</tbody></table></div></div>';
+    document.getElementById('sumReport').outerHTML = html;
+  });
+}
+
+// ── PRODUCT SHEET (new design: courier code+name editable, Col A=SEGOF, B=ItemDesc, C=Qty) ──
+var _lastProductSheetData = null;
+
+// Courier code input pe vendor select bhi sync karo
+function onCourierCodeInput(el) {
+  var code = el.value.trim();
+  // vendor hidden select mein bhi set karo
+  var sel = document.getElementById('prod_vendor');
+  var matched = false;
+  for (var i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === code) {
+      sel.value = code;
+      // name bhi auto fill
+      var vObj = vendorList.find(function(v){ return v.code === code; });
+      if (vObj) {
+        var nameEl = document.getElementById('prod_courier_name');
+        if (!nameEl.value.trim()) nameEl.value = vObj.name;
+      }
+      matched = true;
+      break;
+    }
+  }
+  if (!matched) sel.value = '';
+}
+
+function refreshProductSheet() {
+  document.getElementById('prod_courier_code').value = '';
+  document.getElementById('prod_courier_name').value = '';
+  document.getElementById('prod_vendor').value = '';
+  document.getElementById('prodMsg').innerHTML = '';
+  document.getElementById('prodReport').innerHTML = '';
+  // dates reset to today
+  var today = new Date().toISOString().split('T')[0];
+  document.getElementById('prod_from').value = today;
+  document.getElementById('prod_to').value   = today;
+  showMsg('prodMsg','success','✅ Refresh ho gaya — naye courier ke liye tayar hai!');
+}
+
+function generateProductSheet() {
+  var courierCode = document.getElementById('prod_courier_code').value.trim();
+  var courierName = document.getElementById('prod_courier_name').value.trim();
+  var from = document.getElementById('prod_from').value;
+  var to   = document.getElementById('prod_to').value;
+  if (!courierCode) { showMsg('prodMsg','error','Courier Code daalna zaroori hai!'); return; }
+  if (!courierName) { showMsg('prodMsg','error','Courier Name daalna zaroori hai!'); return; }
+
+  showMsg('prodMsg','info','🔄 Generating...');
+  apiCall('generateRequisition', { vendorCode: courierCode, dateFrom: from, dateTo: to }, function(err, res) {
+    if (err || !res.success) {
+      showMsg('prodMsg','error','❌ ' + (err ? err.message : res.error));
+      document.getElementById('prodReport').innerHTML = '';
+      return;
+    }
+    var sec = res.sections && res.sections[0];
+    if (!sec) {
+      showMsg('prodMsg','error','❌ Is courier ke liye is date range mein koi item nahi mila');
+      document.getElementById('prodReport').innerHTML = '';
+      return;
+    }
+
+    // Same-date duplicate SE GOF check in this section
+    var seGofCount = {};
+    sec.groups.forEach(function(g) {
+      g.rows.forEach(function(r) {
+        seGofCount[r.seGof] = (seGofCount[r.seGof] || 0) + 1;
+      });
+    });
+    var duplicates = Object.keys(seGofCount).filter(function(k){ return seGofCount[k] > 1; });
+    if (duplicates.length > 0) {
+      showMsg('prodMsg','warn','⚠️ Warning: Yeh SE GOF # is date mein ek se zyada martaba hai: <strong>' + duplicates.join(', ') + '</strong> — check karein!');
+    } else {
+      showMsg('prodMsg','success','✅ Ready!');
+    }
+
+    _lastProductSheetData = { courierCode: courierCode, courierName: courierName, from: from, to: to, sec: sec };
+
+    // Build report — Col A=SE GOF#, Col B=Item Desc, Col C=Qty
+    var html = '<div class="card" id="prodReport" style="padding:20px">';
+    // Header
+    html += '<div style="text-align:center;padding:12px 8px;background:#1a3a6b;color:#fff;border-radius:6px 6px 0 0;">'
+      + '<div style="font-size:16px;font-weight:800;">TCS Private Limited — Sentiments Express</div>'
+      + '<div style="font-size:13px;font-weight:700;margin-top:4px;">Product Sheet</div>'
+      + '<div style="font-size:10px;opacity:.75;margin-top:2px;">✨ Designed &amp; Built with Pride by <strong>Shuaib Saeed</strong></div>'
+      + '</div>';
+    // Courier + date info row
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px;font-size:13px;flex-wrap:wrap;gap:8px;">'
+      + '<div><strong>Courier Code:</strong> <span style="font-family:var(--mono);font-weight:700;color:var(--primary)">' + esc(courierCode) + '</span>'
+      + ' &nbsp;|&nbsp; <strong>Courier Name:</strong> ' + esc(courierName) + '</div>'
+      + '<div style="color:var(--text2);font-size:12px;">Date: <strong>' + esc(from) + '</strong>' + (to !== from ? ' to <strong>' + esc(to) + '</strong>' : '') + '</div>'
+      + '</div>';
+    // Table
+    html += '<div class="tbl-wrap"><table class="report-tbl">';
+    html += '<thead><tr>'
+      + '<th style="width:140px">SE GOF #</th>'
+      + '<th>Item Description</th>'
+      + '<th class="num" style="width:70px">Qty</th>'
+      + '</tr></thead><tbody>';
+
+    sec.groups.forEach(function(g) {
+      // Item desc group header row
+      html += '<tr class="tr-desc"><td colspan="3" style="padding-left:10px"><strong>📦 ' + esc(g.desc) + '</strong></td></tr>';
+      g.rows.forEach(function(r) {
+        var isDup = seGofCount[r.seGof] > 1;
+        html += '<tr' + (isDup ? ' style="background:#fff3cd"' : '') + '>'
+          + '<td style="font-family:var(--mono);font-size:12px">' + esc(r.seGof) + (isDup ? ' ⚠️' : '') + '</td>'
+          + '<td style="font-size:12px">' + esc(g.desc) + '</td>'
+          + '<td class="num">' + r.qty + '</td>'
+          + '</tr>';
+      });
+      html += '<tr class="tr-total"><td></td><td class="num"><strong>Sub Total:</strong></td><td class="num"><strong>' + g.totalQty + '</strong></td></tr>';
+    });
+
+    html += '<tr class="tr-grand"><td colspan="2"><strong>TOTAL QTY</strong></td><td class="num"><strong>' + sec.totalQty + '</strong></td></tr>';
+    html += '</tbody></table></div></div>';
+    document.getElementById('prodReport').outerHTML = html;
+  });
+}
+
+function printProductSheetDirect() {
+  var el = document.getElementById('prodReport');
+  if (!el || !el.innerHTML.trim()) { alert('Pehle Product Sheet generate karein!'); return; }
+  var courierCode = document.getElementById('prod_courier_code').value.trim() || 'courier';
+  var from = document.getElementById('prod_from').value || '';
+  var fname = 'ProductSheet_' + courierCode + (from ? '_' + from : '');
+  var w = window.open('', '_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>' + fname + '</title>');
+  w.document.write('<style>body{font-family:Arial,sans-serif;font-size:11px;margin:12mm 15mm;}table{width:100%;border-collapse:collapse;margin-top:8px;}th{background:#1a3a6b;color:#fff;padding:7px 9px;text-align:left;font-size:10.5px;}td{border:1px solid #ccc;padding:5px 9px;font-size:10.5px;}.tr-desc{background:#eef2fa;font-weight:600;}.tr-total{background:#e8f4e8;font-weight:600;}.tr-grand{background:#1a3a6b;color:#fff;font-weight:bold;}.tr-grand td{color:#fff!important;border-color:#1a3a6b;}.num{text-align:right;font-family:monospace;}@page{size:A4 portrait;margin:12mm 15mm;}@media print{body{margin:0;}}</style></head><body>');
+  w.document.write(el.innerHTML);
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.document.title = fname; w.print(); }, 500);
+}
+
+// ── VENDOR SLIP ──
+function generateVendorSlip() {
+  var vendor = document.getElementById('vs_vendor').value;
+  var from = document.getElementById('vs_from').value;
+  var to   = document.getElementById('vs_to').value;
+  showMsg('vsMsg','info','🔄 Generating...');
+  apiCall('generateVendorSlip', { vendorCode:vendor, dateFrom:from, dateTo:to }, function(err, res) {
+    if (err || !res.success) { showMsg('vsMsg','error','❌ '+(err?err.message:res.error)); return; }
+    showMsg('vsMsg','success','✅ Ready!');
+    var vName = vendor ? esc(res.vendorName) : 'All Vendors';
+    var html = '<div class="card" id="vsReport" style="padding:20px">';
+    html += reportHeader('Vendor Slip','Date: '+from+' to '+to+(vendor?' &nbsp;|&nbsp; Vendor: '+vendor+' — '+vName:''));
+    html += '<div class="tbl-wrap"><table class="report-tbl"><thead><tr><th>Vendor</th><th>Item Desc</th><th>Item Code</th><th>SE GOF</th><th class="num">Qty</th><th class="num">Amount</th><th class="num">GST</th><th class="num">Total</th></tr></thead><tbody>';
+    res.sections.forEach(function(sec) {
+      html += '<tr class="tr-vendor"><td colspan="4"><strong>🏪 '+esc(sec.vendor)+'</strong></td><td class="num"><strong>'+sec.totalQty+'</strong></td><td></td><td></td><td class="num"><strong>'+fmt(sec.totalAmt)+'</strong></td></tr>';
+      sec.groups.forEach(function(g) {
+        html += '<tr class="tr-desc"><td></td><td colspan="3"><strong>'+esc(g.desc)+'</strong></td><td></td><td></td><td></td><td></td></tr>';
+        g.rows.forEach(function(r) {
+          html += '<tr><td></td><td></td><td style="font-family:var(--mono)">'+esc(r.itemCode)+'</td><td style="font-family:var(--mono)">'+esc(r.seGof)+'</td><td class="num">'+r.qty+'</td><td class="num">'+fmt(r.amount)+'</td><td class="num">'+fmt(r.gst)+'</td><td class="num">'+fmt(r.total)+'</td></tr>';
+        });
+        html += '<tr class="tr-total"><td colspan="3"></td><td class="num"><strong>Total:</strong></td><td class="num"><strong>'+g.totalQty+'</strong></td><td class="num"><strong>'+fmt(g.totalAmt)+'</strong></td><td class="num"><strong>'+fmt(g.totalGst)+'</strong></td><td class="num"><strong>'+fmt(g.total)+'</strong></td></tr>';
+      });
+      html += '<tr><td colspan="8" style="padding:3px"></td></tr>';
+    });
+    html += '<tr class="tr-grand"><td colspan="4"><strong>GRAND TOTAL</strong></td><td class="num"><strong>'+res.grandQty+'</strong></td><td class="num"><strong>'+fmt(res.grandAmt)+'</strong></td><td class="num"><strong>'+fmt(res.grandGst)+'</strong></td><td class="num"><strong>'+fmt(res.grandTotal)+'</strong></td></tr>';
+    html += '</tbody></table></div></div>';
+    document.getElementById('vsReport').outerHTML = html;
+  });
+}
+
+// ── VENDOR DETAILS ──
+function generateVendorDetails() {
+  var from = document.getElementById('vd_from').value;
+  var to   = document.getElementById('vd_to').value;
+  if (!from||!to) { showMsg('vdMsg','error','Date From aur To dono bharo!'); return; }
+  _lastVdDates = { from:from, to:to };
+  showMsg('vdMsg','info','🔄 Generating...');
+  apiCall('generateVendorDetails', { dateFrom:from, dateTo:to }, function(err, res) {
+    if (err || !res.success) { showMsg('vdMsg','error','❌ '+(err?err.message:res.error)); return; }
+    _lastVdData = res;
+    showMsg('vdMsg','success','✅ '+res.total+' vendors mile!');
+    var html = '<div class="card" id="vdReport" style="padding:20px">';
+    html += reportHeader('Vendor Details','Date Range: '+from+' to '+to+' &nbsp;|&nbsp; Total: '+res.total+' vendors');
+    html += '<div class="tbl-wrap"><table class="report-tbl"><thead><tr><th>#</th><th>Vendor Code</th><th>Vendor Name</th></tr></thead><tbody>';
+    res.data.forEach(function(v,i) {
+      html += '<tr><td class="num">'+(i+1)+'</td><td style="font-family:var(--mono);font-weight:600">'+esc(v.code)+'</td><td>'+esc(v.name)+'</td></tr>';
+    });
+    html += '</tbody></table></div></div>';
+    document.getElementById('vdReport').outerHTML = html;
+  });
+}
+
+// ── PRINT ──
+function printReport(id, type) {
+  var el = document.getElementById(id);
+  if (!el||!el.innerHTML.trim()) { alert('Pehle report generate karein!'); return; }
+  var vendor='',from='',to='',vName='';
+  if (type==='Requisition'){vendor=document.getElementById('req_vendor').value;from=document.getElementById('req_from').value;to=document.getElementById('req_to').value;}
+  else if(type==='ProductSheet'){vendor=document.getElementById('prod_vendor').value;from=document.getElementById('prod_from').value;to=document.getElementById('prod_to').value;}
+  else if(type==='Summary'){vendor=document.getElementById('sum_vendor').value;from=document.getElementById('sum_from').value;to=document.getElementById('sum_to').value;}
+  else if(type==='VendorSlip'){vendor=document.getElementById('vs_vendor').value;from=document.getElementById('vs_from').value;to=document.getElementById('vs_to').value;}
+  else if(type==='VendorDetails'){from=document.getElementById('vd_from').value;to=document.getElementById('vd_to').value;}
+  if (vendor) { var vObj=vendorList.find(function(v){return v.code===vendor;}); vName=vObj?vObj.name:vendor; }
+  var fname = type;
+  if (vendor) fname += '_' + vendor + (vName?'_'+vName.replace(/\s+/g,'_'):'');
+  if (from) fname += '_' + from;
+  if (to && to!==from) fname += '_to_' + to;
+  var w = window.open('','_blank');
+  w.document.write('<!DOCTYPE html><html><head><title>'+fname+'</title>');
+  w.document.write('<style>body{font-family:Arial,sans-serif;font-size:11px;margin:12mm 15mm;}h2{color:#1a3a6b;font-size:15px;margin:0;}h3{font-size:13px;margin:4px 0;}p{margin:2px 0;}table{width:100%;border-collapse:collapse;margin-top:12px;}th{background:#1a3a6b;color:#fff;padding:7px 9px;text-align:left;font-size:10.5px;}td{border:1px solid #ccc;padding:5px 9px;font-size:10.5px;}.tr-vendor{background:#dce8ff;font-weight:bold;}.tr-desc{background:#eef2fa;font-weight:600;}.tr-total{background:#e8f4e8;font-weight:600;}.tr-grand{background:#1a3a6b;color:#fff;font-weight:bold;}.tr-grand td{color:#fff!important;border-color:#1a3a6b;}.num{text-align:right;font-family:monospace;}@page{size:A4 portrait;margin:12mm 15mm;}@media print{body{margin:0;}}</style></head><body>');
+  w.document.write(el.innerHTML);
+  w.document.write('</body></html>');
+  w.document.close();
+  setTimeout(function(){ w.document.title=fname; w.print(); }, 500);
+}
+
+// ── EXCEL (real .xlsx with formatting, matches on-screen report) ──
+var XLSX_NAVY  = '1A3A6B';
+var XLSX_GREEN = 'E8F4E8';
+var XLSX_BLUE  = 'DCE8FF';
+var XLSX_GREY  = 'EEF2FA';
+
+function xlsxBorder() {
+  return { top:{style:'thin',color:{rgb:'C8D6ED'}}, bottom:{style:'thin',color:{rgb:'C8D6ED'}}, left:{style:'thin',color:{rgb:'C8D6ED'}}, right:{style:'thin',color:{rgb:'C8D6ED'}} };
+}
+function xlsxStyleCell(ws, addr, value, style) {
+  ws[addr] = { v: value, t: (typeof value === 'number' ? 'n' : 's'), s: style };
+}
+function xlsxTitleStyle()  { return { font:{ bold:true, sz:14, color:{rgb:'1A3A6B'} } }; }
+function xlsxSubStyle()    { return { font:{ bold:true, sz:11, color:{rgb:'4A5878'} } }; }
+function xlsxLabelStyle()  { return { font:{ bold:true, sz:10, color:{rgb:'1A2340'} } }; }
+function xlsxHeaderStyle() { return { font:{ bold:true, color:{rgb:'FFFFFF'} }, fill:{ patternType:'solid', fgColor:{rgb:XLSX_NAVY} }, alignment:{ horizontal:'center', vertical:'center' }, border:xlsxBorder() }; }
+function xlsxCellStyle(align)  { return { border:xlsxBorder(), alignment:{ horizontal: align||'left' } }; }
+function xlsxTotalStyle(align) { return { font:{ bold:true }, fill:{ patternType:'solid', fgColor:{rgb:XLSX_GREEN} }, border:xlsxBorder(), alignment:{ horizontal: align||'left' } }; }
+function xlsxGrandStyle(align) { return { font:{ bold:true, color:{rgb:'FFFFFF'} }, fill:{ patternType:'solid', fgColor:{rgb:XLSX_NAVY} }, border:xlsxBorder(), alignment:{ horizontal: align||'left' } }; }
+
+function downloadXLSX(ws, colWidths, fname, sheetName) {
+  ws['!cols'] = colWidths.map(function(w){ return { wch: w }; });
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName || 'Sheet1');
+  XLSX.writeFile(wb, fname);
+}
+
+function exportSummaryExcel() {
+  if (!_lastSummaryData) { alert('Pehle Summary generate karein!'); return; }
+  var d = _lastSummaryData;
+  var ws = {};
+  var R = 0;
+  xlsxStyleCell(ws, 'A'+(R+1), 'TCS Private Limited — Sentiments Express', xlsxTitleStyle()); R++;
+  xlsxStyleCell(ws, 'A'+(R+1), 'Summary Slip', xlsxSubStyle()); R++;
+  xlsxStyleCell(ws, 'A'+(R+1), 'Vendor:', xlsxLabelStyle());
+  xlsxStyleCell(ws, 'B'+(R+1), d.vendor+' — '+d.res.vendorName, {}); R++;
+  xlsxStyleCell(ws, 'A'+(R+1), 'Date From:', xlsxLabelStyle());
+  xlsxStyleCell(ws, 'B'+(R+1), d.from, {});
+  xlsxStyleCell(ws, 'C'+(R+1), 'Date To:', xlsxLabelStyle());
+  xlsxStyleCell(ws, 'D'+(R+1), d.to, {}); R++;
+  R++; // blank row
+
+  var headRow = R;
+  ['Item Desc','Qty','Amount','GST','Total Amount'].forEach(function(h, i) {
+    xlsxStyleCell(ws, XLSX.utils.encode_col(i)+(headRow+1), h, xlsxHeaderStyle());
+  });
+  R++;
+
+  d.res.rows.forEach(function(r) {
+    xlsxStyleCell(ws, 'A'+(R+1), r.desc, xlsxCellStyle('left'));
+    xlsxStyleCell(ws, 'B'+(R+1), r.qty, xlsxCellStyle('right'));
+    xlsxStyleCell(ws, 'C'+(R+1), r.amount, xlsxCellStyle('right'));
+    xlsxStyleCell(ws, 'D'+(R+1), r.gst, xlsxCellStyle('right'));
+    xlsxStyleCell(ws, 'E'+(R+1), r.total, xlsxCellStyle('right'));
+    R++;
+  });
+
+  xlsxStyleCell(ws, 'A'+(R+1), 'TOTAL', xlsxTotalStyle('left'));
+  xlsxStyleCell(ws, 'B'+(R+1), d.res.totalQty, xlsxTotalStyle('right'));
+  xlsxStyleCell(ws, 'C'+(R+1), '', xlsxTotalStyle('right'));
+  xlsxStyleCell(ws, 'D'+(R+1), '', xlsxTotalStyle('right'));
+  xlsxStyleCell(ws, 'E'+(R+1), d.res.grandTotal, xlsxTotalStyle('right'));
+  R++;
+
+  ws['!ref'] = 'A1:E'+R;
+  ws['!merges'] = [
+    { s:{r:0,c:0}, e:{r:0,c:4} },
+    { s:{r:1,c:0}, e:{r:1,c:4} }
+  ];
+  downloadXLSX(ws, [28,10,14,12,16], 'Summary_'+d.vendor+'_'+d.from+'_to_'+d.to+'.xlsx', 'Summary');
+}
+
+function exportVendorDetailsExcel() {
+  if (!_lastVdData) { alert('Pehle Vendor Details generate karein!'); return; }
+  var ws = {};
+  var R = 0;
+  xlsxStyleCell(ws, 'A'+(R+1), 'TCS Private Limited — Sentiments Express', xlsxTitleStyle()); R++;
+  xlsxStyleCell(ws, 'A'+(R+1), 'Vendor Details', xlsxSubStyle()); R++;
+  xlsxStyleCell(ws, 'A'+(R+1), 'Date From:', xlsxLabelStyle());
+  xlsxStyleCell(ws, 'B'+(R+1), _lastVdDates.from, {});
+  xlsxStyleCell(ws, 'C'+(R+1), 'Date To:', xlsxLabelStyle());
+  xlsxStyleCell(ws, 'D'+(R+1), _lastVdDates.to, {}); R++;
+  xlsxStyleCell(ws, 'A'+(R+1), 'Total Vendors:', xlsxLabelStyle());
+  xlsxStyleCell(ws, 'B'+(R+1), _lastVdData.total, {}); R++;
+  R++; // blank row
+
+  var headRow = R;
+  ['#','Vendor Code','Vendor Name'].forEach(function(h, i) {
+    xlsxStyleCell(ws, XLSX.utils.encode_col(i)+(headRow+1), h, xlsxHeaderStyle());
+  });
+  R++;
+
+  _lastVdData.data.forEach(function(v, i) {
+    xlsxStyleCell(ws, 'A'+(R+1), i+1, xlsxCellStyle('right'));
+    xlsxStyleCell(ws, 'B'+(R+1), v.code, xlsxCellStyle('left'));
+    xlsxStyleCell(ws, 'C'+(R+1), v.name, xlsxCellStyle('left'));
+    R++;
+  });
+
+  ws['!ref'] = 'A1:C'+R;
+  ws['!merges'] = [
+    { s:{r:0,c:0}, e:{r:0,c:2} },
+    { s:{r:1,c:0}, e:{r:1,c:2} }
+  ];
+  downloadXLSX(ws, [8,18,32], 'VendorDetails_'+_lastVdDates.from+'_to_'+_lastVdDates.to+'.xlsx', 'VendorDetails');
+}
+
+// ── HELPERS ──
+function showMsg(id,type,msg) {
+  var cls=type==='error'?'alert-error':type==='success'?'alert-success':type==='warn'?'alert-warn':'alert-info';
+  var el=document.getElementById(id); if(el) el.innerHTML='<div class="alert '+cls+'">'+msg+'</div>';
+}
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function fmt(n){ return Number(n||0).toLocaleString('en-PK'); }
+function isoDate(s) {
+  if (!s) return '';
+  var months={Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12'};
+  var m=s.match(/(\d{2})-([A-Za-z]+)-(\d{4})/);
+  if (m) return m[3]+'-'+(months[m[2]]||'01')+'-'+m[1];
+  return s;
+}
+
+
+// ── RATE FILE ──
+var rateData = [];
+function loadRateFile() {
+  var wrap = document.getElementById('rateTableWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div class="loader-wrap"><div class="spinner"></div> Loading...</div>';
+  var srch = document.getElementById('rateSearch');
+  if (srch) srch.value = '';
+  apiCall('getRateFile', {}, function(err, res) {
+    if (err || !res.success) {
+      wrap.innerHTML = '<div class="alert alert-error">❌ ' + (err ? err.message : res.error) + '</div>';
+      return;
+    }
+    rateData = res.data;
+    var cnt = document.getElementById('rateCount');
+    if (cnt) cnt.textContent = res.data.length + ' items';
+    renderRateTable(res.data);
+  });
+}
+
+function renderRateTable(data) {
+  var wrap = document.getElementById('rateTableWrap');
+  if (!wrap) return;
+  if (!data.length) { wrap.innerHTML = '<div class="alert alert-info">Koi data nahi.</div>'; return; }
+  var html = '<div class="tbl-wrap"><table><thead><tr>'
+    + '<th style="text-align:center;width:40px">#</th>'
+    + '<th style="text-align:center">Item Code</th>'
+    + '<th>Item Description</th>'
+    + '<th style="text-align:center">Vendor Code</th>'
+    + '<th>Vendor Name</th>'
+    + '<th style="text-align:right">Rate</th>'
+    + '<th>Box Desc</th>'
+    + '<th style="text-align:right">GST</th>'
+    + '</tr></thead><tbody>';
+  data.forEach(function(r, i) {
+    html += '<tr>'
+      + '<td style="text-align:center;color:var(--text2);font-size:11px">' + (i+1) + '</td>'
+      + '<td style="text-align:center;font-family:var(--mono);font-weight:700;color:var(--primary)">' + esc(r.itemCode) + '</td>'
+      + '<td>' + esc(r.itemDesc) + '</td>'
+      + '<td style="text-align:center;font-family:var(--mono);font-weight:600">' + esc(r.vendorCode) + '</td>'
+      + '<td>' + esc(r.vendorName) + '</td>'
+      + '<td style="text-align:right;font-family:var(--mono)">' + fmt(r.rate) + '</td>'
+      + '<td>' + esc(r.boxDesc) + '</td>'
+      + '<td style="text-align:right;font-family:var(--mono)">' + fmt(r.gst) + '</td>'
+      + '</tr>';
+  });
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+}
+
+function filterRate() {
+  var q = document.getElementById('rateSearch').value.toLowerCase();
+  if (!q) { renderRateTable(rateData); return; }
+  renderRateTable(rateData.filter(function(r) {
+    return (r.itemCode + r.itemDesc + r.vendorCode + r.vendorName).toLowerCase().includes(q);
+  }));
+}
+function clearRateSearch() { document.getElementById('rateSearch').value = ''; renderRateTable(rateData); }
+
+// ── ON LOAD ──
+window.onload = function() {
+  document.getElementById('welcomeDate').textContent = new Date().toLocaleDateString('en-PK',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if (API_URL) {
+    document.getElementById('apiStatus').textContent = '✅ Connected';
+    document.getElementById('apiUrlInput').value = API_URL;
+    initApp();
+  } else {
+    document.getElementById('apiStatus').textContent = '⚠️ Settings mein API URL set karein';
+  }
+};
+</script>
+</body>
+</html>
